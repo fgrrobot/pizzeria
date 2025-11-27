@@ -6,8 +6,8 @@ from PIL import Image, ImageTk
 class PizzaApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("🍕 PIZZA")
-        self.root.geometry("900x700")
+        self.root.title("🍕Пиццерия")
+        self.root.geometry("1000x700")
         self.root.configure(bg='#2C3E50')
 
         self.style = {
@@ -21,9 +21,31 @@ class PizzaApp:
         }
 
         self.cart_items = []
+        self.menu_categories = {
+            "Пиццы": [
+                {"name": "Маргарита", "desc": "Сыр моцарелла, томатный соус, базилик", "price": "450₽", "image": "images/Пепперони.jpg"},
+                {"name": "Пепперони", "desc": "Пепперони, моцарелла, томатный соус", "price": "550₽", "image": "images/Пепперони.jpg"},
+                {"name": "Гавайская", "desc": "Ветчина, ананасы, моцарелла, соус", "price": "500₽", "image": "images/Пепперони.jpg"},
+                {"name": "Четыре сыра", "desc": "Моцарелла, пармезан, горгонзола, рикотта", "price": "600₽", "image": "images/Пепперони.jpg"},
+                {"name": "Карбонара", "desc": "Бекон, яйцо, сыр, соус", "price": "570₽", "image": "images/Пепперони.jpg"},
+                {"name": "Мясная", "desc": "Ветчина, салями, бекон, моцарелла", "price": "620₽", "image": "images/Пепперони.jpg"}
+            ],
+            "Закуски": [
+                {"name": "Картофель фри", "desc": "Хрустящий картофель с соусом", "price": "180₽", "image": "images/Пепперони.jpg"},
+                {"name": "Наггетсы", "desc": "Куриные наггетсы (6 шт)", "price": "220₽", "image": "images/Пепперони.jpg"},
+                {"name": "Картофель по деревенски", "desc": "Хрустящий картофель с соусом", "price": "150₽", "image": "images/Пепперони.jpg"}
+            ],
+            "Напитки": [
+                {"name": "Кола", "desc": "0.5 л", "price": "120₽", "image": "images/Пепперони.jpg"},
+                {"name": "Сок", "desc": "0.5 л", "price": "120₽", "image": "images/Пепперони.jpg"},
+                {"name": "Вода", "desc": "Негазированная, 0.5 л", "price": "80₽", "image": "images/Пепперони.jpg"}
+            ]
+        }
+        self.current_menu_category = "Пиццы"
         self.active_tab = 0
         self.tab_frames = []
         self.tab_buttons = []
+        self.category_buttons = {}
 
         self.setup_interface()
 
@@ -36,7 +58,7 @@ class PizzaApp:
 
         tabs = [
             ("🍕 Меню", self.setup_menu),
-            ("🔧 Конструктор", self.setup_builder),
+            ("🔧 Кастомная Пицца", self.setup_builder),
             ("🛒 Корзина", self.setup_cart)
         ]
 
@@ -70,83 +92,115 @@ class PizzaApp:
         self.active_tab = tab_index
 
     def setup_menu(self, parent):
-        header = tk.Label(parent, text="🍕 НАШЕ МЕНЮ ПИЦЦ",
+        header = tk.Label(parent, text="🍕 МЕНЮ",
                          font=('Arial', 20, 'bold'),
                          bg=self.style['bg'], fg=self.style['accent'])
         header.pack(pady=20)
+
+        category_bar = tk.Frame(parent, bg=self.style['bg'])
+        category_bar.pack(pady=(0, 15))
+
+        for cat in ["Пиццы", "Закуски", "Напитки"]:
+            btn = tk.Button(category_bar, text=cat,
+                            font=('Arial', 11, 'bold'),
+                            bg=self.style['tab_bg'], fg=self.style['tab_text'],
+                            relief='flat', bd=0,
+                            command=lambda c=cat: self.switch_menu_category(c))
+            btn.pack(side=tk.LEFT, padx=10)
+            self.category_buttons[cat] = btn
 
         main_container = tk.Frame(parent, bg=self.style['bg'])
         main_container.pack(fill=tk.BOTH, expand=True)
 
         scroll_canvas = tk.Canvas(main_container, bg=self.style['bg'], highlightthickness=0)
         scroll_bar = tk.Scrollbar(main_container, orient=tk.VERTICAL, command=scroll_canvas.yview)
+        self.menu_items_container = tk.Frame(scroll_canvas, bg=self.style['bg'])
 
-        items_container = tk.Frame(scroll_canvas, bg=self.style['bg'])
+        self.menu_items_container.bind(
+            "<Configure>",
+            lambda e: scroll_canvas.configure(scrollregion=scroll_canvas.bbox("all"))
+        )
 
-        items_container.bind("<Configure>", lambda e: scroll_canvas.configure(scrollregion=scroll_canvas.bbox("all")))
-
-        scroll_canvas.create_window((0, 0), window=items_container, anchor="nw")
+        scroll_canvas.create_window((0, 0), window=self.menu_items_container, anchor="nw")
         scroll_canvas.configure(yscrollcommand=scroll_bar.set)
 
         scroll_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20)
         scroll_bar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 20))
 
-        pizza_list = [
-            {"name": "Маргарита", "desc": "Сыр моцарелла, томатный соус, базилик", "price": "450₽", "image": "images/Пепперони.jpg"},
-            {"name": "Пепперони", "desc": "Пепперони, моцарелла, томатный соус", "price": "550₽", "image": "images/Пепперони.jpg"},
-            {"name": "Гавайская", "desc": "Ветчина, ананасы, моцарелла, соус", "price": "500₽", "image": "images/Пепперони.jpg"},
-            {"name": "Четыре сыра", "desc": "Моцарелла, пармезан, горгонзола, рикотта", "price": "600₽", "image": "images/Пепперони.jpg"},
-            {"name": "Карбонара", "desc": "Бекон, яйцо, сыр, соус", "price": "570₽", "image": "images/Пепперони.jpg"},
-            {"name": "Мясная", "desc": "Ветчина, салями, бекон, моцарелла", "price": "620₽", "image": "images/Пепперони.jpg"}
-        ]
+        self.switch_menu_category("Пиццы")
 
-        for position, pizza_item in enumerate(pizza_list):
-            item_frame = self.create_menu_item(items_container, pizza_item)
+    def switch_menu_category(self, category):
+        for cat, btn in self.category_buttons.items():
+            if cat == category:
+                btn.configure(bg=self.style['tab_active'], fg='white')
+            else:
+                btn.configure(bg=self.style['tab_bg'], fg=self.style['tab_text'])
+
+        for widget in self.menu_items_container.winfo_children():
+            widget.destroy()
+
+        self.current_menu_category = category
+        items = self.menu_categories.get(category, [])
+
+        for position, pizza_item in enumerate(items):
+            item_frame = self.create_menu_item(self.menu_items_container, pizza_item)
             row_num, col_num = position // 3, position % 3
-            item_frame.grid(row=row_num, column=col_num, padx=10, pady=10, sticky='nsew')
+            item_frame.grid(row=row_num, column=col_num, padx=10, pady=10)
 
-        items_container.grid_columnconfigure(0, weight=1)
-        items_container.grid_columnconfigure(1, weight=1)
+        for i in range(3):
+            self.menu_items_container.grid_columnconfigure(i, weight=1)
 
     def create_menu_item(self, parent, pizza_data):
-        item_frame = tk.Frame(parent, bg=self.style['card'], relief='raised', bd=2, width=300, height=400)
-        item_frame.grid_propagate(False)
+        item_frame = tk.Frame(parent, bg=self.style['card'], relief='raised', bd=2, width=280, height=400)
+        item_frame.pack_propagate(False)
 
-        pizza_image = Image.open(pizza_data["image"])
-        pizza_image = pizza_image.resize((150, 150), Image.Resampling.LANCZOS)
-        photo_img = ImageTk.PhotoImage(pizza_image)
+        try:
+            pizza_image = Image.open(pizza_data["image"])
+            pizza_image = pizza_image.resize((150, 150), Image.Resampling.LANCZOS)
+            photo_img = ImageTk.PhotoImage(pizza_image)
+        except:
+            photo_img = None
 
-        image_display = tk.Label(item_frame, image=photo_img, bg=self.style['card'])
-        image_display.image = photo_img
-        image_display.pack(pady=15)
+        image_display = tk.Label(item_frame, image=photo_img, bg=self.style['card'], width=150, height=150)
+        if photo_img:
+            image_display.image = photo_img
+        image_display.pack(pady=10)
 
-        name_display = tk.Label(item_frame, text=pizza_data["name"],
-                              font=('Arial', 14, 'bold'),
-                              bg=self.style['card'], fg=self.style['accent'])
-        name_display.pack(pady=(10, 5))
+        name_display = tk.Label(
+            item_frame, text=pizza_data["name"],
+            font=('Arial', 14, 'bold'),
+            bg=self.style['card'], fg=self.style['accent'],
+            wraplength=250, justify='center'
+        )
+        name_display.pack(pady=(5, 5))
 
-        desc_display = tk.Label(item_frame, text=pizza_data["desc"],
-                              font=('Arial', 9),
-                              bg=self.style['card'], fg=self.style['text'],
-                              wraplength=250,
-                              justify=tk.CENTER)
+        desc_display = tk.Label(
+            item_frame, text=pizza_data["desc"],
+            font=('Arial', 9),
+            bg=self.style['card'], fg=self.style['text'],
+            wraplength=250, justify='center'
+        )
         desc_display.pack(pady=5)
 
-        price_display = tk.Label(item_frame, text=pizza_data["price"],
-                               font=('Arial', 16, 'bold'),
-                               bg=self.style['card'], fg=self.style['accent'])
+        price_display = tk.Label(
+            item_frame, text=pizza_data["price"],
+            font=('Arial', 16, 'bold'),
+            bg=self.style['card'], fg=self.style['accent']
+        )
         price_display.pack(pady=5)
 
-        add_button = tk.Button(item_frame, text="➕ Добавить",
-                            font=('Arial', 10, 'bold'),
-                            bg=self.style['accent'], fg='white',
-                            command=lambda: self.cart_add(pizza_data))
-        add_button.pack(pady=10, ipadx=10, ipady=3)
+        add_button = tk.Button(
+            item_frame, text="➕ Добавить",
+            font=('Arial', 10, 'bold'),
+            bg=self.style['accent'], fg='white',
+            command=lambda: self.cart_add(pizza_data)
+        )
+        add_button.pack(pady=10, padx=20, fill=tk.X, ipady=3)
 
         return item_frame
 
     def setup_builder(self, parent):
-        builder_title = tk.Label(parent, text="🔧 КОНСТРУКТОР ПИЦЦЫ",
+        builder_title = tk.Label(parent, text="🔧 КАСТОМНАЯ ПИЦЦА",
                          font=('Arial', 18, 'bold'),
                          bg=self.style['bg'], fg=self.style['accent'])
         builder_title.pack(pady=20)
@@ -242,7 +296,7 @@ class PizzaApp:
     def cart_add(self, pizza_item):
         self.cart_items.append(pizza_item)
         self.refresh_cart()
-        messagebox.showinfo("Успех", f"Пицца '{pizza_item['name']}' добавлена в корзину!")
+        messagebox.showinfo("Успех", f"'{pizza_item['name']}' добавлено в корзину!")
 
     def build_custom_pizza(self):
         size_pricing = {'small': 350, 'medium': 500, 'large': 650}
