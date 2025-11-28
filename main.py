@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
+import json
+import os
+import re
 
 
 class PizzaApp:
@@ -20,6 +23,8 @@ class PizzaApp:
             'text': '#ECF0F1'
         }
 
+        self.user = None
+        self.auth_frame = None
         self.cart_items = []
         self.menu_categories = {
             "Пиццы": [
@@ -47,7 +52,118 @@ class PizzaApp:
         self.tab_buttons = []
         self.category_buttons = {}
 
-        self.setup_interface()
+        self.load_users()
+        if self.user:
+            self.setup_interface()
+        else:
+            self.show_auth_screen()
+
+    def load_users(self):
+        self.users_db = {}
+        if os.path.exists("users.json"):
+            try:
+                with open("users.json", "r", encoding="utf-8") as f:
+                    self.users_db = json.load(f)
+            except:
+                self.users_db = {}
+        self.user = None
+
+    def save_users(self):
+        with open("users本报.json", "w", encoding="utf-8") as f:
+            json.dump(self.users_db, f, ensure_ascii=False, indent=4)
+
+    def validate_phone(self, phone):
+        cleaned = re.sub(r'\D', '', phone)
+        if len(cleaned) < 10:
+            return None
+        if cleaned.startswith('8'):
+            cleaned = '7' + cleaned[1:]
+        elif not cleaned.startswith('7'):
+            cleaned = '7' + cleaned
+        if len(cleaned) != 11:
+            return None
+        return cleaned
+
+    def show_auth_screen(self):
+        if self.auth_frame:
+            self.auth_frame.destroy()
+
+        self.auth_frame = tk.Frame(self.root, bg=self.style['bg'])
+        self.auth_frame.pack(fill=tk.BOTH, expand=True)
+
+        title = tk.Label(self.auth_frame, text="🍕 Добро пожаловать!", font=("Arial", 24, "bold"),
+                         bg=self.style['bg'], fg=self.style['accent'])
+        title.pack(pady=40)
+
+        self.auth_mode = tk.StringVar(value="login")
+        mode_frame = tk.Frame(self.auth_frame, bg=self.style['bg'])
+        mode_frame.pack(pady=10)
+
+        tk.Radiobutton(mode_frame, text="Вход", variable=self.auth_mode, value="login",
+                       bg=self.style['bg'], fg=self.style['text'], selectcolor=self.style['accent'],
+                       font=("Arial", 12), command=self.toggle_auth_mode).pack(side=tk.LEFT, padx=10)
+        tk.Radiobutton(mode_frame, text="Регистрация", variable=self.auth_mode, value="register",
+                       bg=self.style['bg'], fg=self.style['text'], selectcolor=self.style['accent'],
+                       font=("Arial", 12), command=self.toggle_auth_mode).pack(side=tk.LEFT, padx=10)
+
+        form_frame = tk.Frame(self.auth_frame, bg=self.style['card'], relief='raised', bd=2, padx=30, pady=30)
+        form_frame.pack(pady=20)
+
+        tk.Label(form_frame, text="Номер телефона:", bg=self.style['card'], fg=self.style['text'],
+                 font=("Arial", 12)).pack(anchor='w')
+        self.phone_entry = tk.Entry(form_frame, font=("Arial", 14), width=25)
+        self.phone_entry.pack(pady=5)
+
+        tk.Label(form_frame, text="Имя (только при регистрации):", bg=self.style['card'], fg=self.style['text'],
+                 font=("Arial", 12)).pack(anchor='w', pady=(10, 0))
+        self.name_entry = tk.Entry(form_frame, font=("Arial", 14), width=25)
+        self.name_entry.pack(pady=5)
+
+        self.submit_btn = tk.Button(form_frame, text="Войти", font=("Arial", 14, "bold"),
+                                    bg=self.style['accent'], fg="white", command=self.handle_auth)
+        self.submit_btn.pack(pady=20)
+
+        self.toggle_auth_mode()
+
+    def toggle_auth_mode(self):
+        mode = self.auth_mode.get()
+        if mode == "login":
+            self.name_entry.config(state='disabled')
+            self.submit_btn.config(text="Войти")
+        else:
+            self.name_entry.config(state='normal')
+            self.submit_btn.config(text="Зарегистрироваться")
+
+    def handle_auth(self):
+        phone_input = self.phone_entry.get().strip()
+        phone = self.validate_phone(phone_input)
+        if not phone:
+            messagebox.showerror("Ошибка", "Введите корректный номер телефона (10+ цифр)")
+            return
+
+        mode = self.auth_mode.get()
+        if mode == "register":
+            name = self.name_entry.get().strip()
+            if not name:
+                messagebox.showerror("Ошибка", "Введите имя")
+                return
+            if phone in self.users_db:
+                messagebox.showerror("Ошибка", "Пользователь с таким номером уже существует")
+                return
+            self.users_db[phone] = {"name": name, "phone": phone}
+            self.save_users()
+            self.user = self.users_db[phone]
+            messagebox.showinfo("Успех", f"Регистрация завершена, {name}!")
+            self.auth_frame.pack_forget()
+            self.setup_interface()
+        else:
+            if phone not in self.users_db:
+                messagebox.showerror("Ошибка", "Пользователь не найден. Зарегистрируйтесь.")
+                return
+            self.user = self.users_db[phone]
+            messagebox.showinfo("Успех", f"Добро пожаловать, {self.user['name']}!")
+            self.auth_frame.pack_forget()
+            self.setup_interface()
 
     def setup_interface(self):
         tab_bar = tk.Frame(self.root, bg=self.style['bg'])
@@ -342,11 +458,13 @@ class PizzaApp:
             return
 
         order_total = sum(int(item['price'].replace('₽', '')) for item in self.cart_items)
-        messagebox.showinfo("Заказ оформлен!",
-                               f"✅ Ваш заказ принят!\n"
-                               f"🍕 Позиций: {len(self.cart_items)}\n"
-                               f"💵 Сумма: {order_total}₽\n"
-                               f"⏰ Доставка: 30-45 минут")
+        message = f"✅ Заказ оформлен, {self.user['name']}!\n" \
+                  f"🍕 Позиций: {len(self.cart_items)}\n" \
+                  f"💵 Сумма: {order_total}₽\n" \
+                  f"📞 Свяжемся по: {self.user['phone']}\n" \
+                  f"⏰ Доставка: 30-45 минут"
+        messagebox.showinfo("Заказ принят!", message)
+        self.empty_cart()
 
 
 if __name__ == "__main__":
