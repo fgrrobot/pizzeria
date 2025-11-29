@@ -28,22 +28,19 @@ class PizzaApp:
         self.cart_items = []
         self.menu_categories = {
             "Пиццы": [
-                {"name": "Маргарита", "desc": "Сыр моцарелла, томатный соус, базилик", "price": "450₽", "image": "images/Пепперони.jpg"},
+                {"name": "Маргарита", "desc": "Сыр моцарелла, томатный соус, базилик", "price": "450₽", "image": "images/Маргарита.jpg"},
                 {"name": "Пепперони", "desc": "Пепперони, моцарелла, томатный соус", "price": "550₽", "image": "images/Пепперони.jpg"},
-                {"name": "Гавайская", "desc": "Ветчина, ананасы, моцарелла, соус", "price": "500₽", "image": "images/Пепперони.jpg"},
-                {"name": "Четыре сыра", "desc": "Моцарелла, пармезан, горгонзола, рикотта", "price": "600₽", "image": "images/Пепперони.jpg"},
-                {"name": "Карбонара", "desc": "Бекон, яйцо, сыр, соус", "price": "570₽", "image": "images/Пепперони.jpg"},
-                {"name": "Мясная", "desc": "Ветчина, салями, бекон, моцарелла", "price": "620₽", "image": "images/Пепперони.jpg"}
+                {"name": "Гавайская", "desc": "Ветчина, ананасы, моцарелла, соус", "price": "500₽", "image": "images/Гавайская.jpg"},
             ],
             "Закуски": [
-                {"name": "Картофель фри", "desc": "Хрустящий картофель с соусом", "price": "180₽", "image": "images/Пепперони.jpg"},
-                {"name": "Наггетсы", "desc": "Куриные наггетсы (6 шт)", "price": "220₽", "image": "images/Пепперони.jpg"},
-                {"name": "Картофель по деревенски", "desc": "Хрустящий картофель с соусом", "price": "150₽", "image": "images/Пепперони.jpg"}
+                {"name": "Картофель фри", "desc": "Хрустящий картофель с соусом", "price": "180₽", "image": "images/картошка фри.jpeg"},
+                {"name": "Наггетсы", "desc": "Куриные наггетсы (6 шт)", "price": "220₽", "image": "images/нагетсы.jpeg"},
+                {"name": "Картофель по деревенски", "desc": "Хрустящий картофель с соусом", "price": "150₽", "image": "images/картошка по деревенски.jpeg"}
             ],
             "Напитки": [
-                {"name": "Кола", "desc": "0.5 л", "price": "120₽", "image": "images/Пепперони.jpg"},
-                {"name": "Сок", "desc": "0.5 л", "price": "120₽", "image": "images/Пепперони.jpg"},
-                {"name": "Вода", "desc": "Негазированная, 0.5 л", "price": "80₽", "image": "images/Пепперони.jpg"}
+                {"name": "Кола", "desc": "0.5 л", "price": "120₽", "image": "images/кола.jpeg"},
+                {"name": "Сок", "desc": "0.5 л", "price": "120₽", "image": "images/яблочный сок.jpeg"},
+                {"name": "Вода", "desc": "Негазированная, 0.5 л", "price": "80₽", "image": "images/вода.jpeg"}
             ]
         }
         self.current_menu_category = "Пиццы"
@@ -69,7 +66,7 @@ class PizzaApp:
         self.user = None
 
     def save_users(self):
-        with open("users本报.json", "w", encoding="utf-8") as f:
+        with open("users.json", "w", encoding="utf-8") as f:
             json.dump(self.users_db, f, ensure_ascii=False, indent=4)
 
     def validate_phone(self, phone):
